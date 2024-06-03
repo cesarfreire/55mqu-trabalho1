@@ -1,7 +1,6 @@
 import os
 import numpy as np
 import pyomo.environ as pyo
-from matplotlib import pyplot as plt
 
 
 # Função auxiliar que le as instâncias
@@ -22,7 +21,7 @@ def ler_instancia(caminho_arquivo):
     p = int(primeira_linha[2])
 
     # Criar matriz de distâncias com valores grandes para vértices não conectados
-    distancias = np.full((n, n), 99999)
+    distancias = np.full((n, n), 10000)
 
     # Preenche a diagonal com 0
     np.fill_diagonal(distancias, 0)
@@ -48,13 +47,24 @@ def ler_instancia(caminho_arquivo):
 
 # Caminho para a pasta de instâncias
 pasta_instancias = 'instances'
-nome_instancia = 'pmed1n.txt'  # Mudar para o nome do arquivo de instância que deseja usar
+nome_instancia = 'pmed10n.txt'  # Mudar para o nome do arquivo de instância que deseja usar
 caminho_arquivo = os.path.join(pasta_instancias, nome_instancia)
 
 # Ler a instância
 n, a, p, distancias = ler_instancia(caminho_arquivo)
+
+
+def init_m():
+    m = 0
+    for i in range(n):
+        for j in range(n):
+            if i != j and m < distancias[i, j] < 10000:
+                m = distancias[i, j]
+    return m
+
+
 # Defino valor alto para M, conforme citado no modelo
-M = 100000
+M = init_m()
 print("Vertices:", n)
 print("Arestas:", a)
 print("p:", p)
@@ -67,8 +77,21 @@ model = pyo.ConcreteModel()
 # x = 1 se o vertice i for selecionado, 0 caso contrário
 model.x = pyo.Var([i for i in range(n)], domain=pyo.Binary)
 
-# d = distancia mínima máxima (defini inicialmente como 0, não sei exatamente se é o ideal também)
-model.d = pyo.Var(domain=pyo.NonNegativeReals, initialize=0)
+
+# definição do d
+def init_d(model):
+    r = np.inf
+    for i in range(n):
+        for j in range(n):
+            if i != j and distancias[i, j] < r:
+                r = distancias[i, j]
+
+    print("Valor inicial de d:", r)
+    return r
+
+
+# d = distancia mínima máxima
+model.d = pyo.Var(domain=pyo.NonNegativeReals, initialize=init_d)
 
 # funcao objetivo é maximizar o valor de d
 model.obj = pyo.Objective(
@@ -87,10 +110,10 @@ model.cons.add(sum(model.x[i] for i in range(n)) == p)
 for i in range(n):
     for j in range(n):
         # se i for menor que j
-        if i < j:
+        if i < j and i != j:
             # adiciona a restrição conforme modelo
-            model.cons.add(model.d <= distancias[i, j] * (1 + M * (1 - model.x[i]) + M * (1 - model.x[j])))
-
+            #model.cons.add(model.d <= distancias[i, j] * (1 + M * (1 - model.x[i]) + M * (1 - model.x[j])))
+            model.cons.add(model.d <= distancias[i, j] + M * (2 - model.x[i] - model.x[j]))
 opt = pyo.SolverFactory("glpk")
 results = opt.solve(model)
 
@@ -98,7 +121,6 @@ tc = results.solver.termination_condition
 
 if tc == "optimal":
     print(results)
-    print('Custo total:', model.obj())
 
     locais_selecionados = [i for i in model.x if pyo.value(model.x[i]) > 0.5]
     distancia_minima_maxima = pyo.value(model.d)

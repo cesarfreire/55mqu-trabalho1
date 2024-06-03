@@ -13,6 +13,30 @@ def ler_arestas_de_arquivo(nome_arquivo):
     return edges
 
 
+# Função para desenhar o grafo com vértices destacados
+def desenhar_grafo_com_vertices_destacados(G, pos, vertices_destacados):
+    # Adicionar vértices ao grafo com cores diferentes
+    node_colors = []
+    for node in G.nodes():
+        if node in vertices_destacados:
+            node_colors.append('red')
+        else:
+            node_colors.append('skyblue')
+
+    # Desenhar o grafo
+    plt.figure(figsize=(15, 15))
+    nx.draw(G, pos, with_labels=True, node_size=500, node_color=node_colors, font_size=10, font_weight='bold',
+            edge_color='gray')
+
+    # Desenhar as arestas com os pesos
+    labels = nx.get_edge_attributes(G, 'weight')
+    nx.draw_networkx_edge_labels(G, pos, edge_labels=labels, font_size=8)
+
+    # Mostrar a imagem do grafo
+    plt.title("Grafo com Pesos nas Arestas")
+    plt.show()
+
+
 # Ler as arestas do arquivo
 edges = ler_arestas_de_arquivo('instances/pmed1n.txt')
 
@@ -26,15 +50,8 @@ for edge in edges:
 # Definir a posição dos nós
 pos = nx.spring_layout(G)
 
-# Desenhar o grafo
-plt.figure(figsize=(15, 15))
-nx.draw(G, pos, with_labels=True, node_size=500, node_color='skyblue', font_size=10, font_weight='bold',
-        edge_color='gray')
+# Lista de vértices a serem destacados
+vertices_destacados = [1, 17, 37, 49, 60, 70, 74, 82, 85, 87] # Exemplos de vértices a serem destacados em vermelho
 
-# Desenhar as arestas com os pesos
-labels = nx.get_edge_attributes(G, 'weight')
-nx.draw_networkx_edge_labels(G, pos, edge_labels=labels, font_size=8)
-
-# Mostrar a imagem do grafo
-plt.title("Grafo com Pesos nas Arestas")
-plt.show()
+# Desenhar o grafo com os vértices destacados
+desenhar_grafo_com_vertices_destacados(G, pos, vertices_destacados)
