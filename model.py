@@ -53,7 +53,7 @@ caminho_arquivo = os.path.join(pasta_instancias, nome_instancia)
 # Ler a instância
 n, a, p, distancias = ler_instancia(caminho_arquivo)
 
-
+# Função que inicializa a variável M com a maior distância entre os pares
 def init_m():
     m = 0
     for i in range(n):
@@ -63,7 +63,7 @@ def init_m():
     return m
 
 
-# Defino valor alto para M, conforme citado no modelo
+# Define o valor de M
 M = init_m()
 print("Vertices:", n)
 print("Arestas:", a)
@@ -112,8 +112,8 @@ for i in range(n):
         # se i for menor que j
         if i < j and i != j:
             # adiciona a restrição conforme modelo
-            #model.cons.add(model.d <= distancias[i, j] * (1 + M * (1 - model.x[i]) + M * (1 - model.x[j])))
             model.cons.add(model.d <= distancias[i, j] + M * (2 - model.x[i] - model.x[j]))
+
 opt = pyo.SolverFactory("glpk")
 results = opt.solve(model)
 
